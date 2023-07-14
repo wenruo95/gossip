@@ -1,0 +1,24 @@
+namespace: production
+
+role_list:
+  - 
+    role: control
+    conf: ./control.yaml
+    enable: true
+  - 
+    role: broker
+    conf: ./broker.yaml
+    enable: true
+  - 
+    role: storage
+    conf: ./storage.yaml
+    enable: true
+
+
+server:
+  tcp: 5298
+  hearbeat_ms: 100
+  timewait_ms: 180000
+
+log:
+  path: ./log/gossip.log
