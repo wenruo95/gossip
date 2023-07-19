@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	stdlog "log"
 	"os"
 	"os/signal"
 
@@ -11,25 +10,30 @@ import (
 	"github.com/wenruo95/gossip/pkg/log"
 )
 
-func main() {
-	var conf string
-	flag.StringVar(&conf, "conf", "./conf/common.yaml", "-conf=./conf/common.yaml")
+func init() {
+	flag.StringVar(&config.ConfPath, "conf", "./conf/common.yaml", "-conf=./conf/common.yaml")
+	flag.Parse()
+}
 
-	if err := config.InitConfig(conf); err != nil {
-		stdlog.Fatalf("init config error:%v", err)
+func main() {
+	if err := config.InitConfig(); err != nil {
+		log.Fatalf("init config error:%v", err)
 	}
-	if err := log.InitLogger(config.LogConfig()); err != nil {
-		stdlog.Fatalf("init log error:%v", err)
+	if err := log.InitLogger(config.GetLogConfig()); err != nil {
+		log.Fatalf("init log error:%v", err)
 	}
+	defer log.Sync()
 
 	go func() {
 		ch := make(chan os.Signal, 1)
 		signal.Notify(ch, os.Kill, os.Interrupt)
 		sig := <-ch
-		control.Close(sig.String())
+		log.Info("recv signal:" + sig.String())
+		control.Close()
 	}()
 
 	if err := control.Run(); err != nil {
 		log.Fatalf("error:%v", err)
 	}
+	log.Info("gossip exit.")
 }

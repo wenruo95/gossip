@@ -1,2 +1,2 @@
 all: 
-	go build -v -O gossip
+	go build -v -o gossip
