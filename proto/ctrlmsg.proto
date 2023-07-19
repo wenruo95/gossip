@@ -1,0 +1,64 @@
+syntax="proto3";
+
+package ctrlmsg; 
+option go_package="./ctrlmsg";
+
+message RegisterRequest {
+    string server_addr = 1;
+    string cluster     = 2; 
+}
+
+message RegisterResponse {
+    string action = 1; // redirect , disconnect
+}
+
+message HeartbeatRequest {
+}
+
+message HeartbeatResponse {
+}
+
+message PeerInfoRequest {
+    uint32 page      = 1; 
+    uint32 page_size = 2; 
+}
+
+message PeerInfo  {
+    string peer_id     = 1;
+    string server_addr = 2;
+    string cluster     = 3; 
+}
+
+message PeerInfoResponse {
+    bool finished = 1; 
+    repeated PeerInfo infos = 2; 
+}
+
+
+message ReqeustHead {
+    string peer_id = 1; 
+}
+
+message ResponseHead {
+    string peer_id = 1; 
+    uint32 code    = 2; 
+    string message = 3;
+}
+
+message CtrlReqeust {
+    ReqeustHead head = 1;
+    oneof RequestPayload {
+        RegisterRequest  register  = 2;
+        HeartbeatRequest heartbeat = 3;
+        PeerInfoRequest  peer_info = 4; 
+    }
+}
+
+message CtrlResponse {
+    ResponseHead head = 1;
+    oneof ResponsePayload {
+        RegisterResponse  register  = 2;
+        HeartbeatResponse heartbeat = 3;
+        PeerInfoResponse  peer_info = 4; 
+    }
+}

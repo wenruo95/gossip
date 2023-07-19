@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"fmt"
+	"github.com/wenruo95/gossip/pkg/log"
 )
 
 type ExecFunc func() error
@@ -12,8 +12,10 @@ type ExecScope interface {
 }
 
 type execItem struct {
-	key string
-	fn  ExecFunc
+	key    string
+	fn     ExecFunc
+	sync   bool
+	ignore bool
 }
 type execChain struct {
 	execList []*execItem
@@ -30,10 +32,32 @@ func (chain *execChain) With(key string, fn ExecFunc) *execChain {
 	return chain
 }
 
+func (chain *execChain) WithGo(key string, fn ExecFunc) *execChain {
+	chain.execList = append(chain.execList, &execItem{key: key, fn: fn, sync: true})
+	return chain
+}
+func (chain *execChain) WithIgnore(key string, fn ExecFunc, ignoreErr bool) *execChain {
+	chain.execList = append(chain.execList, &execItem{key: key, fn: fn, ignore: true})
+	return chain
+}
+
 func (chain *execChain) Exec() error {
 	for idx, item := range chain.execList {
+		if item.sync {
+			go func() {
+				if err := item.fn(); err != nil {
+					log.Warnf("exec idx:%v key:%v error:%v", idx, item.key, err)
+				}
+			}()
+			continue
+		}
+
 		if err := item.fn(); err != nil {
-			return fmt.Errorf("exec idx:%v key:%v error:%w", idx, item.key, err)
+			log.Warnf("exec idx:%v key:%v error:%v", idx, item.key, err)
+			if item.ignore {
+				continue
+			}
+			return err
 		}
 	}
 	return nil

@@ -13,10 +13,6 @@ import (
 var ctrl *control
 var once int32
 
-type control struct {
-	server *tcp.Server
-}
-
 func Run() error {
 	if swap := atomic.CompareAndSwapInt32(&once, 0, 1); !swap {
 		return errors.New("error:dumplicate run control")
@@ -24,12 +20,18 @@ func Run() error {
 
 	return utils.NewExecChain().
 		With("control", initControl).
+		WithGo("ticker", tickerServe).
 		With("server", serverServe).
 		Exec()
 }
 
 func Close() error {
 	return ctrl.Close()
+}
+
+type control struct {
+	server *tcp.Server
+	ticker *ticker
 }
 
 func initControl() error {
@@ -41,11 +43,16 @@ func initControl() error {
 		tcp.WithHandler(ctrl),
 		tcp.WithTimeout(time.Duration(cfg.TimeoutMs)*time.Millisecond),
 	)
+	ctrl.ticker = newTicker()
 	return nil
 }
 
 func serverServe() error {
 	return ctrl.server.Serve()
+}
+
+func tickerServe() error {
+	return ctrl.ticker.Serve()
 }
 
 func (ctrl *control) Close() error {

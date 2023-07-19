@@ -12,6 +12,7 @@ import (
 
 func init() {
 	flag.StringVar(&config.ConfPath, "conf", "./conf/common.yaml", "-conf=./conf/common.yaml")
+	flag.StringVar(&config.ServerAddr, "addr", "", "-addr=:5298")
 	flag.Parse()
 }
 

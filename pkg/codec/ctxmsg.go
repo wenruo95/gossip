@@ -16,11 +16,13 @@ type Msg interface {
 	WithBiz(biz string)
 	WithCMD(cmd string)
 	WithUID(uid uint64)
+	WithSourceID(sourceID string)
 	WithTraceID(traceID string)
 
 	Biz() string
 	CMD() string
 	UID() uint64
+	SourceID() string
 	TraceID() string
 
 	Fileds() []zap.Field
@@ -52,10 +54,11 @@ func Message(ctx context.Context) Msg {
 type msg struct {
 	context context.Context
 
-	biz     string
-	cmd     string
-	uid     uint64
-	traceID string
+	biz      string
+	cmd      string
+	uid      uint64
+	sourceID string
+	traceID  string
 }
 
 func newMsg() *msg {
@@ -88,6 +91,14 @@ func (msg *msg) WithUID(uid uint64) {
 
 func (msg *msg) UID() uint64 {
 	return msg.uid
+}
+
+func (msg *msg) WithSourceID(sourceID string) {
+	msg.sourceID = sourceID
+}
+
+func (msg *msg) SourceID() string {
+	return msg.sourceID
 }
 
 func (msg *msg) WithTraceID(traceID string) {

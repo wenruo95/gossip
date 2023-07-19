@@ -1,3 +1,4 @@
 gossip
+bin
 ./log
 *.log
