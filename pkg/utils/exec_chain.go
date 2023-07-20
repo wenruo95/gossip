@@ -36,24 +36,26 @@ func (chain *execChain) WithGo(key string, fn ExecFunc) *execChain {
 	chain.execList = append(chain.execList, &execItem{key: key, fn: fn, sync: true})
 	return chain
 }
+
 func (chain *execChain) WithIgnore(key string, fn ExecFunc, ignoreErr bool) *execChain {
 	chain.execList = append(chain.execList, &execItem{key: key, fn: fn, ignore: true})
 	return chain
 }
 
 func (chain *execChain) Exec() error {
-	for idx, item := range chain.execList {
+	for idx, v := range chain.execList {
+		item := v
 		if item.sync {
 			go func() {
 				if err := item.fn(); err != nil {
-					log.Warnf("exec idx:%v key:%v error:%v", idx, item.key, err)
+					log.Warnf("exec %v(%v) error:%v", item.key, idx, err)
 				}
 			}()
 			continue
 		}
 
 		if err := item.fn(); err != nil {
-			log.Warnf("exec idx:%v key:%v error:%v", idx, item.key, err)
+			log.Warnf("exec %v(%v) error:%v", item.key, idx, err)
 			if item.ignore {
 				continue
 			}

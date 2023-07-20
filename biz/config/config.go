@@ -33,5 +33,6 @@ func GetServerConfig() *ServerConfig {
 func GetLogConfig() *log.Config {
 	cfg := new(log.Config)
 	cfg.FileName = ""
+	cfg.Level = "debug"
 	return cfg
 }

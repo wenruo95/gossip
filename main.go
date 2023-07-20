@@ -2,8 +2,6 @@ package main
 
 import (
 	"flag"
-	"os"
-	"os/signal"
 
 	"github.com/wenruo95/gossip/biz/config"
 	"github.com/wenruo95/gossip/biz/control"
@@ -25,16 +23,5 @@ func main() {
 	}
 	defer log.Sync()
 
-	go func() {
-		ch := make(chan os.Signal, 1)
-		signal.Notify(ch, os.Kill, os.Interrupt)
-		sig := <-ch
-		log.Info("recv signal:" + sig.String())
-		control.Close()
-	}()
-
-	if err := control.Run(); err != nil {
-		log.Fatalf("error:%v", err)
-	}
-	log.Info("gossip exit.")
+	log.Fatalf("error:%v", control.Run())
 }

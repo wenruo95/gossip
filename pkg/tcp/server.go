@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	ServerStatusInit = iota
-	ServerStatusServing
-	ServerStatusListening
-	ServerStatusStoped
+	ServerStatusInit      = 0
+	ServerStatusServing   = 1
+	ServerStatusListening = 2
+	ServerStatusStoped    = 3
 )
 
 var (
@@ -43,6 +43,7 @@ func NewServer(opts ...ServerOption) *Server {
 	for _, opt := range opts {
 		opt(server)
 	}
+	server.status = ServerStatusInit
 	return server
 }
 
@@ -54,7 +55,7 @@ func (svr *Server) Serve() error {
 	if svr == nil || len(svr.addr) == 0 || svr.handler == nil {
 		return errors.New("invalid server args")
 	}
-	if !atomic.CompareAndSwapInt32(&svr.status, ServerStatusInit, ServerStatusServing) {
+	if swaped := atomic.CompareAndSwapInt32(&svr.status, ServerStatusInit, ServerStatusServing); !swaped {
 		return errors.New("invalid server status:" + strconv.FormatInt(int64(svr.status), 10))
 	}
 

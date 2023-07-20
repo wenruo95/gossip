@@ -24,10 +24,10 @@ func (handler *TestTCPClientHandler) OnDisconnect(cli *Client, reason string) {
 }
 
 func Test_Client(t *testing.T) {
-	svr := NewServer("127.0.0.1:8000", &TestTCPServerHandler{})
+	svr := NewServer(WithAddr("127.0.0.1:8000"), WithHandler(&TestTCPServerHandler{}), WithTimeout(3*time.Second))
 	defer svr.Close()
 	go func() {
-		if err := svr.Serve(3 * time.Second); err != nil {
+		if err := svr.Serve(); err != nil {
 			t.Errorf("start server error:%v", err)
 		}
 	}()

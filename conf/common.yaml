@@ -1,19 +1,5 @@
 namespace: production
-
-role_list:
-  - 
-    role: control
-    conf: ./control.yaml
-    enable: true
-  - 
-    role: broker
-    conf: ./broker.yaml
-    enable: true
-  - 
-    role: storage
-    conf: ./storage.yaml
-    enable: true
-
+cluster: default
 
 server:
   tcp: 5298

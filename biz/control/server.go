@@ -7,6 +7,11 @@ import (
 	"github.com/wenruo95/gossip/pkg/tcp"
 )
 
+// 1. register to server_addr list
+// 2. heartbeat
+// 3. query peer_info
+// 4. query peer_meta_info
+
 func (ctrl *control) OnConnect(conn *tcp.ClientConn) {
 	log.Infof("server: new client connection. addr:%v", conn.RemoteAddr().String())
 }
