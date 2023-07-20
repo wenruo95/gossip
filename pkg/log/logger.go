@@ -23,7 +23,6 @@ type Logger interface {
 	Fatal(msg string)
 	Fatalf(format string, v ...interface{})
 	Fatalw(format string, v ...zap.Field)
-	SetLevel(level zapcore.Level)
 	Level() zapcore.Level
 }
 
@@ -93,10 +92,6 @@ func (z *ZLogger) Fatalf(format string, v ...interface{}) {
 
 func (z *ZLogger) Fatalw(format string, v ...zap.Field) {
 	z.l.Fatal(format, v...)
-}
-
-func (z *ZLogger) SetLevel(level zapcore.Level) {
-	z.l.Level().Enabled(level)
 }
 
 func (z *ZLogger) Level() zapcore.Level {

@@ -18,6 +18,8 @@ type peerCache struct {
 
 func newPeerCache() *peerCache {
 	cache := new(peerCache)
+	cache.curr = new(PeerInfo)
+	cache.curr.StartTime = time.Now()
 	cache.peerInfos = make(map[string]*PeerInfo)
 	cache.connInfos = make(map[string][]*PeerInfo)
 	return cache

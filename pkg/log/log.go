@@ -69,10 +69,6 @@ func Fatalw(format string, v ...zap.Field) {
 	stdLogger.Fatalw(format, v...)
 }
 
-func SetLevel(level zapcore.Level) {
-	stdLogger.Level().Enabled(level)
-}
-
 func Level() zapcore.Level {
 	return stdLogger.Level()
 }

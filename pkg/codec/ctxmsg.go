@@ -13,17 +13,15 @@ var ctxKey ContextMsgKey = ContextMsgKey("ctx_msg_key")
 type Msg interface {
 	Context() context.Context
 
-	WithBiz(biz string)
 	WithCMD(cmd string)
 	WithUID(uid uint64)
-	WithSourceID(sourceID string)
 	WithTraceID(traceID string)
+	WithSourceID(sourceID string)
 
-	Biz() string
 	CMD() string
 	UID() uint64
-	SourceID() string
 	TraceID() string
+	SourceID() string
 
 	Fileds() []zap.Field
 }
@@ -54,7 +52,6 @@ func Message(ctx context.Context) Msg {
 type msg struct {
 	context context.Context
 
-	biz      string
 	cmd      string
 	uid      uint64
 	sourceID string
@@ -67,14 +64,6 @@ func newMsg() *msg {
 
 func (msg *msg) Context() context.Context {
 	return msg.context
-}
-
-func (msg *msg) WithBiz(biz string) {
-	msg.biz = biz
-}
-
-func (msg *msg) Biz() string {
-	return msg.biz
 }
 
 func (msg *msg) WithCMD(cmd string) {
@@ -111,9 +100,9 @@ func (msg *msg) TraceID() string {
 
 func (msg *msg) Fileds() []zap.Field {
 	return []zap.Field{
-		zap.String("biz", msg.biz),
 		zap.String("cmd", msg.cmd),
 		zap.Uint64("uid", msg.uid),
 		zap.String("trace_id", msg.traceID),
+		zap.String("source_id", msg.SourceID()),
 	}
 }

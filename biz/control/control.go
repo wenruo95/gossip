@@ -2,8 +2,6 @@ package control
 
 import (
 	"errors"
-	"os"
-	"os/signal"
 	"sync/atomic"
 	"time"
 
@@ -22,10 +20,12 @@ func Run() error {
 	}
 
 	ctrl = newControl()
+	defer ctrl.Close()
+
 	return utils.NewExecChain().
 		WithGo("ticker", ctrl.ticker.Serve).
-		WithGo("signal", signalServe).
-		With("server", ctrl.server.Serve).
+		WithGo("server", ctrl.server.Serve).
+		With("signal", signalServe).
 		Exec()
 }
 
@@ -33,6 +33,11 @@ type control struct {
 	server *tcp.Server
 	ticker *ticker
 	pcache *peerCache
+}
+
+func signalServe() error {
+	utils.SignalServe(2*time.Second, ctrl.Close)
+	return nil
 }
 
 func newControl() *control {
@@ -48,18 +53,11 @@ func newControl() *control {
 	return c
 }
 
-func signalServe() error {
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, os.Kill, os.Interrupt)
-	sig := <-ch
-	log.Info("recv signal:" + sig.String())
-	ctrl.Close()
-	return nil
-}
-
-func (ctrl *control) Close() error {
-	if ctrl == nil || ctrl.server == nil {
-		return nil
+func (ctrl *control) Close() {
+	if ctrl == nil {
+		return
 	}
-	return ctrl.server.Close()
+	if err := ctrl.server.Close(); err != nil {
+		log.Error("close server error:" + err.Error())
+	}
 }

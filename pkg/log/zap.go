@@ -1,6 +1,7 @@
 package log
 
 import (
+	"fmt"
 	"os"
 
 	"go.uber.org/zap"
@@ -45,8 +46,10 @@ func InitLogger(config *Config) error {
 	return initZapLog(config)
 }
 
-func Sync() error {
-	return zapCore.Sync()
+func Sync() {
+	if err := zapCore.Sync(); err != nil {
+		fmt.Printf("sync error:" + err.Error())
+	}
 }
 
 func getEncoder() zapcore.Encoder {
