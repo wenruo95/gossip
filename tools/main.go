@@ -76,7 +76,7 @@ func main() {
 
 	case "dec":
 		if err := DecodeFile(inputFd, outputFd, key); err != nil {
-			log.Fatalf("encode_file error:%v", err)
+			log.Fatalf("decode_file error:%v", err)
 		}
 
 	default:
@@ -84,6 +84,5 @@ func main() {
 	}
 
 	log.Infof("finished op:%v consume:%v", op, time.Since(begin))
-
 	return
 }
