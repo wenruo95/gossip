@@ -83,6 +83,6 @@ func main() {
 
 	}
 
-	log.Infof("finished op:%v consume:%v", op, time.Since(begin))
+	log.Infof("finished op:%v output:%v consume:%v", op, outputFile, time.Since(begin))
 	return
 }

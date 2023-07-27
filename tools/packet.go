@@ -45,7 +45,6 @@ func EncodeFile(reader io.Reader, writer io.Writer, key []byte) error {
 		return err
 	} else {
 		preMD5 = m
-		log.Debugf("[TEST1] md5:%v", hex.EncodeToString(preMD5))
 	}
 
 	size := DataSliceSize
@@ -80,7 +79,6 @@ func EncodeFile(reader io.Reader, writer io.Writer, key []byte) error {
 			MD5:    buffMD5,
 			Data:   encodeBuff,
 		}
-		log.Debugf("[TEST] seq:%v pre:%v md5:%v data:%v", body.Seq, hex.EncodeToString(body.PreMD5), hex.EncodeToString(body.MD5), hex.EncodeToString(body.Data))
 		bodyBuff, err := body.Marshal()
 		if err != nil {
 			return err
@@ -89,7 +87,6 @@ func EncodeFile(reader io.Reader, writer io.Writer, key []byte) error {
 			return err
 		} else {
 			preMD5 = m
-			log.Debugf("[TEST2] md5:%v", hex.EncodeToString(preMD5))
 		}
 		if err := utils.WriteAll(writer, utils.Pack(bodyBuff, BodyFlag, txid)); err != nil {
 			return err
@@ -161,7 +158,6 @@ func DecodeFile(reader io.Reader, writer io.Writer, key []byte) error {
 			if body.Seq != seq {
 				return fmt.Errorf("invalid seq:%v expected:%v", body.Seq, seq)
 			}
-			log.Debugf("[TEST] seq:%v pre:%v md5:%v data:%v", body.Seq, hex.EncodeToString(body.PreMD5), hex.EncodeToString(body.MD5), hex.EncodeToString(body.Data))
 			if !bytes.Equal(preMD5, body.PreMD5) {
 				return fmt.Errorf("pre sign:%v error. expected:%v",
 					hex.EncodeToString(keyMD5), hex.EncodeToString(body.PreMD5))
@@ -205,8 +201,6 @@ func DecodeFile(reader io.Reader, writer io.Writer, key []byte) error {
 			return err
 		}
 		preMD5 = m
-		log.Debugf("[TEST1] md5:%v", hex.EncodeToString(preMD5))
-
 	}
 
 	fileMD5 := checkMD5.Sum(nil)
@@ -245,7 +239,7 @@ func (h *HeadPacket) Unmarshal(body []byte) error {
 }
 
 type BodyPacket struct {
-	Seq    uint32 // 32
+	Seq    uint32 // 4
 	PreMD5 []byte // 16
 	MD5    []byte // 16
 	Data   []byte // len - 64
@@ -267,14 +261,14 @@ func (b *BodyPacket) Marshal() ([]byte, error) {
 }
 
 func (b *BodyPacket) Unmarshal(body []byte) error {
-	if len(body) < 64 {
-		return fmt.Errorf("invalid body.len:%v greater than %v", len(body), 64)
+	if len(body) < 36 {
+		return fmt.Errorf("invalid body.len:%v greater than %v", len(body), 36)
 	}
 
-	binary.Read(bytes.NewReader(body[:32]), binary.BigEndian, &b.Seq)
-	b.PreMD5 = body[32:48]
-	b.MD5 = body[48:64]
-	b.Data = body[64:]
+	binary.Read(bytes.NewReader(body[:4]), binary.BigEndian, &b.Seq)
+	b.PreMD5 = body[4:20]
+	b.MD5 = body[20:36]
+	b.Data = body[36:]
 	return nil
 }
 
