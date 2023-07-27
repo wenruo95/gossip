@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"crypto/md5"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/wenruo95/gossip/pkg/log"
 	"github.com/wenruo95/gossip/pkg/utils"
@@ -28,13 +30,13 @@ func EncodeFile(reader io.Reader, writer io.Writer, key []byte) error {
 		return err
 	}
 
-	var seq uint32 = 1
+	txid := uint32(time.Now().Unix())
 	head := &HeadPacket{CompressFlag: CompressFlagGzip, EncodeFlag: EncodeFlagAES32, EncKeySign: keyMD5}
 	headBuff, err := head.Marshal()
 	if err != nil {
 		return err
 	}
-	if err := utils.WriteAll(writer, utils.Pack(headBuff, HeadFlag, seq)); err != nil {
+	if err := utils.WriteAll(writer, utils.Pack(headBuff, HeadFlag, txid)); err != nil {
 		return err
 	}
 
@@ -43,17 +45,20 @@ func EncodeFile(reader io.Reader, writer io.Writer, key []byte) error {
 		return err
 	} else {
 		preMD5 = m
+		log.Debugf("[TEST1] md5:%v", hex.EncodeToString(preMD5))
 	}
 
 	size := DataSliceSize
 	inputMD5 := md5.New()
 	var sum int
+	var seq uint32
 	for {
 		buff := make([]byte, size)
 		n, err := reader.Read(buff)
 		if err != nil && err != io.EOF {
 			return err
 		}
+		sum = sum + n
 		if _, err := inputMD5.Write(buff[:n]); err != nil {
 			return err
 		}
@@ -68,38 +73,39 @@ func EncodeFile(reader io.Reader, writer io.Writer, key []byte) error {
 			return err
 		}
 
+		seq = seq + 1
 		body := &BodyPacket{
+			Seq:    seq,
 			PreMD5: preMD5,
 			MD5:    buffMD5,
 			Data:   encodeBuff,
 		}
-		data, err := body.Marshal()
+		log.Debugf("[TEST] seq:%v pre:%v md5:%v data:%v", body.Seq, hex.EncodeToString(body.PreMD5), hex.EncodeToString(body.MD5), hex.EncodeToString(body.Data))
+		bodyBuff, err := body.Marshal()
 		if err != nil {
 			return err
 		}
-		if m, err := utils.MD5Data(data); err != nil {
+		if m, err := utils.MD5Data(bodyBuff); err != nil {
 			return err
 		} else {
 			preMD5 = m
+			log.Debugf("[TEST2] md5:%v", hex.EncodeToString(preMD5))
 		}
-		seq = seq + 1
-		if err := utils.WriteAll(writer, utils.Pack(data, BodyFlag, seq)); err != nil {
+		if err := utils.WriteAll(writer, utils.Pack(bodyBuff, BodyFlag, txid)); err != nil {
 			return err
 		}
-		sum = sum + n
 		if n < size {
 			break
 		}
 	}
 
-	seq = seq + 1
 	imd5 := inputMD5.Sum(nil)
 	tail := &TailPacket{PreMD5: preMD5, MD5: imd5}
 	tailBuff, err := tail.Marshal()
 	if err != nil {
 		return err
 	}
-	if err := utils.WriteAll(writer, utils.Pack(tailBuff, TailFlag, seq)); err != nil {
+	if err := utils.WriteAll(writer, utils.Pack(tailBuff, TailFlag, txid)); err != nil {
 		return err
 	}
 
@@ -108,37 +114,34 @@ func EncodeFile(reader io.Reader, writer io.Writer, key []byte) error {
 }
 
 func DecodeFile(reader io.Reader, writer io.Writer, key []byte) error {
-
 	keyMD5, err := utils.MD5Data(key)
 	if err != nil {
 		return err
 	}
 
-	var head *HeadPacket
-	var tail *TailPacket
-
-	var sum int
-	var preMD5 []byte
-	checkMD5 := md5.New()
-	for seq := uint32(1); tail == nil; seq = seq + 1 {
+	var (
+		head     *HeadPacket
+		tail     *TailPacket
+		sum      int
+		preMD5   []byte
+		seq      uint32
+		checkMD5 = md5.New()
+	)
+	for idx := uint32(1); tail == nil; idx = idx + 1 {
 		data, flag, txid, err := utils.Unpack(reader)
 		log.Infof("flag:%v txid:%v sum:%v len:%v error:%v", flag, txid, sum, len(data), err)
 		if err != nil && err != io.EOF {
 			return err
 		}
 
-		if txid != seq {
-			return fmt.Errorf("invalid txid:%v expected:%v", txid, seq)
-		}
-
-		if seq == 1 && flag != HeadFlag {
+		if idx == 1 && flag != HeadFlag {
 			return fmt.Errorf("invalid flag:%v expected:%v", flag, HeadFlag)
 		}
 
 		switch flag {
 		case HeadFlag:
-			if seq != 1 {
-				return fmt.Errorf("invalid headflag seq:%v", seq)
+			if idx != 1 {
+				return fmt.Errorf("invalid headflag idx:%v", idx)
 			}
 			head = new(HeadPacket)
 			if err := head.Unmarshal(data); err != nil {
@@ -148,19 +151,19 @@ func DecodeFile(reader io.Reader, writer io.Writer, key []byte) error {
 				return fmt.Errorf("sign:%v error. expected:%v",
 					hex.EncodeToString(keyMD5), hex.EncodeToString(head.EncKeySign))
 			}
-			m, err := utils.MD5Data(data)
-			if err != nil {
-				return err
-			}
-			preMD5 = m
 
 		case BodyFlag:
+			seq = seq + 1
 			body := new(BodyPacket)
 			if err := body.Unmarshal(data); err != nil {
 				return err
 			}
+			if body.Seq != seq {
+				return fmt.Errorf("invalid seq:%v expected:%v", body.Seq, seq)
+			}
+			log.Debugf("[TEST] seq:%v pre:%v md5:%v data:%v", body.Seq, hex.EncodeToString(body.PreMD5), hex.EncodeToString(body.MD5), hex.EncodeToString(body.Data))
 			if !bytes.Equal(preMD5, body.PreMD5) {
-				return fmt.Errorf("sign:%v error. expected:%v",
+				return fmt.Errorf("pre sign:%v error. expected:%v",
 					hex.EncodeToString(keyMD5), hex.EncodeToString(body.PreMD5))
 			}
 			buff, err := DecodeData(body.Data, head.CompressFlag, head.EncodeFlag, key)
@@ -172,7 +175,7 @@ func DecodeFile(reader io.Reader, writer io.Writer, key []byte) error {
 				return err
 			}
 			if !bytes.Equal(m, body.MD5) {
-				return fmt.Errorf("sign:%v error. expected:%v",
+				return fmt.Errorf("current_data sign:%v error. expected:%v",
 					hex.EncodeToString(m), hex.EncodeToString(body.MD5))
 			}
 			if _, err := checkMD5.Write(buff); err != nil {
@@ -182,10 +185,9 @@ func DecodeFile(reader io.Reader, writer io.Writer, key []byte) error {
 			if err := utils.WriteAll(writer, buff); err != nil {
 				return err
 			}
-			preMD5 = m
 
 		case TailFlag:
-			tail := new(TailPacket)
+			tail = new(TailPacket)
 			if err := tail.Unmarshal(data); err != nil {
 				return err
 			}
@@ -197,6 +199,13 @@ func DecodeFile(reader io.Reader, writer io.Writer, key []byte) error {
 
 		default:
 		}
+
+		m, err := utils.MD5Data(data)
+		if err != nil {
+			return err
+		}
+		preMD5 = m
+		log.Debugf("[TEST1] md5:%v", hex.EncodeToString(preMD5))
 
 	}
 
@@ -236,13 +245,15 @@ func (h *HeadPacket) Unmarshal(body []byte) error {
 }
 
 type BodyPacket struct {
+	Seq    uint32 // 32
 	PreMD5 []byte // 16
 	MD5    []byte // 16
-	Data   []byte // len - 32
+	Data   []byte // len - 64
 }
 
 func (b *BodyPacket) Marshal() ([]byte, error) {
 	buff := new(bytes.Buffer)
+	binary.Write(buff, binary.BigEndian, b.Seq)
 	if err := utils.WriteAll(buff, b.PreMD5); err != nil {
 		return nil, err
 	}
@@ -256,12 +267,14 @@ func (b *BodyPacket) Marshal() ([]byte, error) {
 }
 
 func (b *BodyPacket) Unmarshal(body []byte) error {
-	if len(body) < 12 {
-		return fmt.Errorf("invalid body.len:%v greater than %v", len(body), 12)
+	if len(body) < 64 {
+		return fmt.Errorf("invalid body.len:%v greater than %v", len(body), 64)
 	}
-	b.PreMD5 = body[:16]
-	b.MD5 = body[16:32]
-	b.Data = body[32:]
+
+	binary.Read(bytes.NewReader(body[:32]), binary.BigEndian, &b.Seq)
+	b.PreMD5 = body[32:48]
+	b.MD5 = body[48:64]
+	b.Data = body[64:]
 	return nil
 }
 
