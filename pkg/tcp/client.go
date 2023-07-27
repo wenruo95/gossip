@@ -109,7 +109,7 @@ func (cli *Client) Send(body []byte, messageFlag byte, txid uint32) error {
 		return errors.New("conn not working")
 	}
 
-	return PackWrite(cli.TCPConn, messageFlag, txid, body)
+	return WriteAll(cli.TCPConn, Pack(body, messageFlag, txid))
 }
 
 func (cli *Client) stopAndCallDisconnect(reason string) {

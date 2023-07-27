@@ -23,7 +23,8 @@ type Msg interface {
 	TraceID() string
 	SourceID() string
 
-	Fileds() []zap.Field
+	WithFields(field ...zap.Field)
+	Fields() []zap.Field
 }
 
 func NewMsg(ctx context.Context) (context.Context, Msg) {
@@ -56,10 +57,11 @@ type msg struct {
 	uid      uint64
 	sourceID string
 	traceID  string
+	fields   []zap.Field
 }
 
 func newMsg() *msg {
-	return &msg{}
+	return &msg{fields: make([]zap.Field, 0)}
 }
 
 func (msg *msg) Context() context.Context {
@@ -98,11 +100,33 @@ func (msg *msg) TraceID() string {
 	return msg.traceID
 }
 
-func (msg *msg) Fileds() []zap.Field {
-	return []zap.Field{
-		zap.String("cmd", msg.cmd),
-		zap.Uint64("uid", msg.uid),
-		zap.String("trace_id", msg.traceID),
-		zap.String("source_id", msg.SourceID()),
+func (msg *msg) WithFields(fields ...zap.Field) {
+	msg.fields = append(msg.fields, fields...)
+}
+
+func (msg *msg) Fields() []zap.Field {
+	if len(msg.fields) == 0 {
+		return []zap.Field{
+			zap.String("cmd", msg.cmd),
+			zap.Uint64("uid", msg.uid),
+			zap.String("trace_id", msg.traceID),
+			zap.String("source_id", msg.SourceID()),
+		}
 	}
+
+	f := make([]zap.Field, 0)
+	f = append(f, msg.fields...)
+	if len(msg.cmd) > 0 {
+		f = append(f, zap.String("cmd", msg.cmd))
+	}
+	if msg.uid > 0 {
+		f = append(f, zap.Uint64("uid", msg.uid))
+	}
+	if len(msg.traceID) > 0 {
+		f = append(f, zap.String("trace_id", msg.traceID))
+	}
+	if len(msg.sourceID) > 0 {
+		f = append(f, zap.String("source_id", msg.SourceID()))
+	}
+	return f
 }

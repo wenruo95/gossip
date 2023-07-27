@@ -74,76 +74,76 @@ func Level() zapcore.Level {
 }
 
 func CtxDebug(ctx context.Context, msg string) {
-	stdLogger.Debugw(msg, codec.Message(ctx).Fileds()...)
+	stdLogger.Debugw(msg, codec.Message(ctx).Fields()...)
 }
 
 func CtxDebugf(ctx context.Context, format string, v ...interface{}) {
-	stdLogger.Debugw(fmt.Sprintf(format, v...), codec.Message(ctx).Fileds()...)
+	stdLogger.Debugw(fmt.Sprintf(format, v...), codec.Message(ctx).Fields()...)
 }
 
 func CtxDebugw(ctx context.Context, format string, v ...zap.Field) {
 	fs := make([]zap.Field, 0)
-	fs = append(fs, codec.Message(ctx).Fileds()...)
+	fs = append(fs, codec.Message(ctx).Fields()...)
 	fs = append(fs, v...)
 	stdLogger.Debugw(format, fs...)
 }
 
 func CtxInfo(ctx context.Context, msg string) {
-	stdLogger.Infow(msg, codec.Message(ctx).Fileds()...)
+	stdLogger.Infow(msg, codec.Message(ctx).Fields()...)
 }
 
 func CtxInfof(ctx context.Context, format string, v ...interface{}) {
-	stdLogger.Infow(fmt.Sprintf(format, v...), codec.Message(ctx).Fileds()...)
+	stdLogger.Infow(fmt.Sprintf(format, v...), codec.Message(ctx).Fields()...)
 }
 
 func CtxInfow(ctx context.Context, format string, v ...zap.Field) {
 	fs := make([]zap.Field, 0)
-	fs = append(fs, codec.Message(ctx).Fileds()...)
+	fs = append(fs, codec.Message(ctx).Fields()...)
 	fs = append(fs, v...)
 	stdLogger.Infow(format, fs...)
 }
 
 func CtxWarn(ctx context.Context, msg string) {
-	stdLogger.Warnw(msg, codec.Message(ctx).Fileds()...)
+	stdLogger.Warnw(msg, codec.Message(ctx).Fields()...)
 }
 
 func CtxWarnf(ctx context.Context, format string, v ...interface{}) {
-	stdLogger.Warnw(fmt.Sprintf(format, v...), codec.Message(ctx).Fileds()...)
+	stdLogger.Warnw(fmt.Sprintf(format, v...), codec.Message(ctx).Fields()...)
 }
 
 func CtxWarnw(ctx context.Context, format string, v ...zap.Field) {
 	fs := make([]zap.Field, 0)
-	fs = append(fs, codec.Message(ctx).Fileds()...)
+	fs = append(fs, codec.Message(ctx).Fields()...)
 	fs = append(fs, v...)
 	stdLogger.Warnw(format, fs...)
 }
 
 func CtxError(ctx context.Context, msg string) {
-	stdLogger.Errorw(msg, codec.Message(ctx).Fileds()...)
+	stdLogger.Errorw(msg, codec.Message(ctx).Fields()...)
 }
 
 func CtxErrorf(ctx context.Context, format string, v ...interface{}) {
-	stdLogger.Errorw(fmt.Sprintf(format, v...), codec.Message(ctx).Fileds()...)
+	stdLogger.Errorw(fmt.Sprintf(format, v...), codec.Message(ctx).Fields()...)
 }
 
 func CtxErrorw(ctx context.Context, format string, v ...zap.Field) {
 	fs := make([]zap.Field, 0)
-	fs = append(fs, codec.Message(ctx).Fileds()...)
+	fs = append(fs, codec.Message(ctx).Fields()...)
 	fs = append(fs, v...)
 	stdLogger.Errorw(format, fs...)
 }
 
 func CtxFatal(ctx context.Context, msg string) {
-	stdLogger.Fatalw(msg, codec.Message(ctx).Fileds()...)
+	stdLogger.Fatalw(msg, codec.Message(ctx).Fields()...)
 }
 
 func CtxFatalf(ctx context.Context, format string, v ...interface{}) {
-	stdLogger.Fatalw(fmt.Sprintf(format, v...), codec.Message(ctx).Fileds()...)
+	stdLogger.Fatalw(fmt.Sprintf(format, v...), codec.Message(ctx).Fields()...)
 }
 
 func CtxFatalw(ctx context.Context, format string, v ...zap.Field) {
 	fs := make([]zap.Field, 0)
-	fs = append(fs, codec.Message(ctx).Fileds()...)
+	fs = append(fs, codec.Message(ctx).Fields()...)
 	fs = append(fs, v...)
 	stdLogger.Fatalw(format, fs...)
 }

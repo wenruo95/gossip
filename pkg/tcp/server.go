@@ -158,7 +158,7 @@ func (client *ClientConn) Send(body []byte, messageFlag byte, txid uint32) error
 	if atomic.LoadInt32(&client.working) == 0 {
 		return errors.New("conn not working")
 	}
-	return PackWrite(client.TCPConn, messageFlag, txid, body)
+	return WriteAll(client.TCPConn, Pack(body, messageFlag, txid))
 }
 
 func (client *ClientConn) stopAndCallDisconnect(reason string) {

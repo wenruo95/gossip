@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,4 +23,14 @@ func SignalServe(wait time.Duration, stop func()) {
 	time.Sleep(wait)
 	log.Info("wait for " + wait.String() + " close")
 	os.Exit(128 + int(sig.(syscall.Signal)))
+}
+
+var randstr = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+func RandCharacter(n int) []byte {
+	data := make([]byte, n)
+	for i := 0; i < n; i++ {
+		data[i] = randstr[rand.Int()%len(randstr)]
+	}
+	return data
 }

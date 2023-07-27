@@ -14,13 +14,6 @@ const (
 	PkgHeadLen = 11
 )
 
-type PkgHead struct {
-	Version       byte   // 版本号
-	MessageFlag   byte   // 区分消息类型
-	Txid          uint32 // txid
-	SizeOfMessage uint32 // 消息大小
-}
-
 // 封包
 // bodylen=len(body)
 // 0--------1--------2--------3--------7--------11--------X--------X+1
@@ -54,22 +47,24 @@ func Unpack(reader io.Reader) ([]byte, byte, uint32, error) {
 		return nil, 0, 0, fmt.Errorf("invalid pkghead:%v must be:%v", begin, PkgBegin)
 	}
 
-	var err error
-	header := &PkgHead{}
-	header.Version, err = headerBuf.ReadByte()
+	version, err := headerBuf.ReadByte()
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	if version != PkgVersion {
+		return nil, 0, 0, fmt.Errorf("invalid version:%v", version)
+	}
+
+	messageFlag, err := headerBuf.ReadByte()
 	if err != nil {
 		return nil, 0, 0, err
 	}
 
-	header.MessageFlag, err = headerBuf.ReadByte()
-	if err != nil {
-		return nil, 0, 0, err
-	}
+	var txid, size uint32
+	binary.Read(headerBuf, binary.BigEndian, &txid)
+	binary.Read(headerBuf, binary.BigEndian, &size)
 
-	binary.Read(headerBuf, binary.BigEndian, &header.Txid)
-	binary.Read(headerBuf, binary.BigEndian, &header.SizeOfMessage)
-
-	data := make([]byte, header.SizeOfMessage+1)
+	data := make([]byte, size+1)
 	if _, err := io.ReadFull(reader, data); err != nil {
 		return nil, 0, 0, err
 	}
@@ -78,13 +73,11 @@ func Unpack(reader io.Reader) ([]byte, byte, uint32, error) {
 		return nil, 0, 0, fmt.Errorf("invalid pkgend:%v must be:%v", data[len(data)-1], PkgEnd)
 	}
 
-	return data[:len(data)-1], header.MessageFlag, header.Txid, nil
+	return data[:len(data)-1], messageFlag, txid, nil
 }
 
-func PackWrite(writer io.Writer, messageFlag byte, txid uint32, buff []byte) error {
+func WriteAll(writer io.Writer, data []byte) error {
 	var size int
-
-	data := Pack(buff, messageFlag, txid)
 	for {
 		body := data[size:]
 		n, err := writer.Write(body)
@@ -98,7 +91,7 @@ func PackWrite(writer io.Writer, messageFlag byte, txid uint32, buff []byte) err
 		}
 	}
 	if size != len(data) {
-		return fmt.Errorf("data len:%v actual send:%v", len(data), size)
+		return fmt.Errorf("write error. n:%v expected:%v", size, len(data))
 	}
 
 	return nil
