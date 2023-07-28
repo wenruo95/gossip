@@ -1,7 +1,7 @@
 syntax="proto3";
 
-package ctrlmsg; 
-option go_package="./ctrlmsg";
+package ctrl; 
+option go_package="./ctrl";
 
 message RegisterRequest {
     string server_addr = 1;

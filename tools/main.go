@@ -71,11 +71,17 @@ func main() {
 	switch op {
 	case "enc":
 		if err := EncodeFile(inputFd, outputFd, key); err != nil {
+			if err := os.Remove(outputFile); err != nil {
+				log.Errorf("remove file:%v error:%v", outputFile, err)
+			}
 			log.Fatalf("encode_file error:%v", err)
 		}
 
 	case "dec":
 		if err := DecodeFile(inputFd, outputFd, key); err != nil {
+			if err := os.Remove(outputFile); err != nil {
+				log.Errorf("remove file:%v error:%v", outputFile, err)
+			}
 			log.Fatalf("decode_file error:%v", err)
 		}
 

@@ -1,0 +1,43 @@
+syntax="proto3";
+
+package client; 
+option go_package="./client";
+
+
+message AuthRequest {
+    int32  appid      = 1; // appid
+    string secret_id  = 2; // app secret_id
+    int64  timestamp  = 3; // unit timestamp
+    int64  nonce      = 4; // rand number
+    string sign       = 5; // md5(appid + secret_id + timestamp + nonce + secret_key)
+}
+
+message AuthResponse {
+    uint32 code    = 1; 
+    string message = 2;
+}
+
+message TransferRequest {
+    uint32 seq  = 1; 
+    bytes  data = 2;
+}
+
+message TransferResponse {
+    uint32 code    = 1; 
+    string message = 2;
+    uint32 seq     = 3;
+}
+
+message ClientReqeust {
+    oneof RequestPayload {
+        AuthRequest     auth     = 1;
+        TransferRequest transfer = 2;
+    }
+}
+
+message ClientResponse {
+    oneof ResponsePayload {
+        AuthResponse     auth     = 1;
+        TransferResponse transfer = 2;
+    }
+}
